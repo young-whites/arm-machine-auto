@@ -310,18 +310,24 @@ static int stage_dispense(void)
  * ======================================================================== */
 static int stage_tighten_cap(void)
 {
+    int ret;
+
     INFO_PRINT("=== Stage 5: TightenCap ===\n");
-    for (int i = 0; i < 2; i++) {
-        if (g_stop_requested) return -1;
-        if (wait_robot_request_and_ack(1, "TightenCap") != 0) return -1;
-        if (i == 0) {
-            INFO_PRINT("TightenCap: closing gripper and tightening (simulated)\n");
-            rt_thread_mdelay(500);
-        } else {
-            INFO_PRINT("TightenCap: releasing gripper (simulated)\n");
-            rt_thread_mdelay(300);
-        }
-    }
+
+    /* 第1次: 机械臂写 AO1=1 (到位) → 上位机闭合夹爪并拧紧 → ACK */
+    if (g_stop_requested) return -1;
+    if (wait_robot_request_and_ack(1, "TightenCap-Close") != 0) return -1;
+    INFO_PRINT("TightenCap: closing gripper and tightening (simulated)\n");
+    rt_thread_mdelay(500);
+
+    /* 第2次: 机械臂直接 WaitAI(AI1>0) (无 WriteAO!) → 上位机松开夹爪 → ACK
+     * 注意：此处不轮询 AO1，直接写 AI1=1 确认 */
+    if (g_stop_requested) return -1;
+    INFO_PRINT("TightenCap: releasing gripper (simulated)\n");
+    rt_thread_mdelay(300);
+    ret = ack_robot("TightenCap-Open");
+    if (ret != 0) return -1;
+
     INFO_PRINT("TightenCap: completed\n");
     return 0;
 }
@@ -335,21 +341,30 @@ static int stage_tighten_cap(void)
  * ======================================================================== */
 static int stage_shake_dispense(void)
 {
+    int ret;
+
     INFO_PRINT("=== Stage 6: ShakeDispense ===\n");
-    for (int step = 0; step < 3; step++) {
-        if (g_stop_requested) return -1;
-        if (wait_robot_request_and_ack(1, "ShakeDispense") != 0) return -1;
-        if (step == 0) {
-            INFO_PRINT("ShakeDispense: closing gripper to hold bottle (simulated)\n");
-            rt_thread_mdelay(300);
-        } else if (step == 1) {
-            INFO_PRINT("ShakeDispense: executing shake action (simulated)\n");
-            rt_thread_mdelay(1000);
-        } else {
-            INFO_PRINT("ShakeDispense: releasing gripper (simulated)\n");
-            rt_thread_mdelay(300);
-        }
-    }
+
+    /* 第1次: 机械臂写 AO1=1 (到位放瓶) → 上位机闭合夹爪 → ACK */
+    if (g_stop_requested) return -1;
+    if (wait_robot_request_and_ack(1, "Shake-Grip") != 0) return -1;
+    INFO_PRINT("ShakeDispense: closing gripper to hold bottle (simulated)\n");
+    rt_thread_mdelay(300);
+
+    /* 第2次: 机械臂写 AO1=1 (可以摇匀) → 上位机执行摇匀 → ACK */
+    if (g_stop_requested) return -1;
+    if (wait_robot_request_and_ack(1, "Shake-Shake") != 0) return -1;
+    INFO_PRINT("ShakeDispense: executing shake action (simulated)\n");
+    rt_thread_mdelay(1000);
+
+    /* 第3次: 机械臂直接 WaitAI(AI1>0) (无 WriteAO!) → 上位机松开夹爪 → ACK
+     * 注意：此处不轮询 AO1，直接写 AI1=1 确认 */
+    if (g_stop_requested) return -1;
+    INFO_PRINT("ShakeDispense: releasing gripper (simulated)\n");
+    rt_thread_mdelay(300);
+    ret = ack_robot("Shake-Release");
+    if (ret != 0) return -1;
+
     INFO_PRINT("ShakeDispense: completed\n");
     return 0;
 }
