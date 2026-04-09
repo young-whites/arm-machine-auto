@@ -83,7 +83,7 @@ static int wait_robot_signal(uint32_t timeout_ms, const char *desc)
 
 /* ------------------------------------------------------------ */
 /* 业务帮助函数：写寄存器后轮询目标 AO/线圈直至等于期望值 */
-static int write_then_poll(uint16_t write_addr, uint16_t write_val,
+int write_then_poll(uint16_t write_addr, uint16_t write_val,
                           uint16_t poll_addr, uint16_t target_val,
                           uint32_t timeout_ms, uint32_t poll_interval)
 {
@@ -96,7 +96,7 @@ static int write_then_poll(uint16_t write_addr, uint16_t write_val,
 
 /* ------------------------------------------------------------ */
 /* 等待机械臂先写指定 AO 值，然后发送 ACK（写 AI1=1） */
-static int wait_robot_request_and_ack(uint16_t expected_ao, const char *stage)
+int wait_robot_request_and_ack(uint16_t expected_ao, const char *stage)
 {
     int ret = modbus_poll_until_equal(AO_ADDR_STEP, expected_ao,
                                       STEP_TIMEOUT_MS,

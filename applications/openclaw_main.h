@@ -22,23 +22,6 @@ typedef enum {
 } Stage_t;
 
 /* ========================================================================
- *  业务帮助函数（写‑等待‑确认）
- * ======================================================================== */
-/**
- * @brief 写寄存器后轮询目标 AO 寄存器直至等于 target_val
- * @return 0 成功，-1 超时或停止请求
- */
-int write_then_poll(uint16_t write_addr, uint16_t write_val,
-                    uint16_t poll_addr, uint16_t target_val,
-                    uint32_t timeout_ms, uint32_t poll_interval);
-
-/**
- * @brief 等待机械臂先写指定的 AO 值，然后发送 ACK（写 AI1=1）
- * @return 0 成功，-1 超时或错误
- */
-int wait_robot_request_and_ack(uint16_t expected_ao, const char *stage);
-
-/* ========================================================================
  *  函数接口
  * ======================================================================== */
 
