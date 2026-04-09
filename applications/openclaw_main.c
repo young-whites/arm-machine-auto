@@ -159,11 +159,19 @@ static int wait_ao0_complete(void)
  * ======================================================================== */
 static int stage_startup(void)
 {
+    int ret;
+
     INFO_PRINT("=== Stage 1: Startup ===\n");
-    return write_then_poll(AI_ADDR_START, 1,
-                           AO_ADDR_STEP, 1,
-                           STEP_TIMEOUT_MS,
-                           MODBUS_POLL_INTERVAL_MS);
+
+    /* 写 AI0=1 启动机械臂，机械臂 WaitAI(AI0>0) 检测到后开始执行 */
+    ret = modbus_write_and_clear(AI_ADDR_START, 1);
+    if (ret != 0) {
+        ERROR_PRINT("Startup: failed to send start signal\n");
+        return -1;
+    }
+
+    INFO_PRINT("Startup: start signal sent, proceeding to Stage 2\n");
+    return 0;
 }
 
 /* ========================================================================
@@ -188,7 +196,7 @@ static int stage_pick_bottle(void)
         return -1;
     }
 
-    INFO_PRINT("PickBottle: bottle ID %d sent, waiting for robot...\n", g_bottle_id);
+    INFO_PRINT("PickBottle: bottle ID %d sent, robot executing...\n", g_bottle_id);
 
     /* 反瓶检测: 轮询 AO1，最多处理两次信号（夹紧+换位） */
     {
