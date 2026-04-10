@@ -413,6 +413,7 @@ int modbus_read_input_register(uint16_t reg_addr, uint16_t *p_value)
             ERROR_PRINT("FC04 TID=%04X: no response (timeout)\n", tid);
             timeout_error_printed = 1;
         }
+        flush_rx_buffer(); /* 清空接收缓冲区，避免残留数据影响下次 */
         return -2;
     }
 
