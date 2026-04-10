@@ -249,9 +249,9 @@ int modbus_read_holding_register(uint16_t reg_addr, uint16_t *p_value)
     ret = send_frame(frame, FC03_FRAME_LEN);
     if (ret != 0) return -1;
 
-    /* 等待响应 (超时100ms, 快速轮询适配机械臂500ms清除) */
+    /* 等待响应 (超时60s, 适配机械臂运动耗时) */
     uint16_t recv_len = 0;
-    ret = receive_response(s_rx_buf, sizeof(s_rx_buf), &recv_len, 100);
+    ret = receive_response(s_rx_buf, sizeof(s_rx_buf), &recv_len, 60000);
 
     if (ret != 0) {
         ERROR_PRINT("FC03 TID=%04X: no response (timeout)\n", tid);
