@@ -2,6 +2,14 @@
 
 ## 2026-04-10
 
+### 18:35 — 添加 FC04 读输入寄存器函数
+- **文件**: `modbus_tcp.c`, `debug_uart.c`, `config.h`
+- **内容**: 
+  - 新增 `modbus_read_input_register()` 函数，使用 FC04 读取输入寄存器
+  - 修改 `cmd_read_ao1` 命令，使用 FC04 读取 AO1
+  - 添加 `MODBUS_FC_READ_INPUT` 宏定义
+  - AO 寄存器属于输入寄存器，应使用 FC04 读取
+
 ### 18:29 — 新增 MSH 命令 cmd_read_ao1
 - **文件**: `debug_uart.c`
 - **内容**: 

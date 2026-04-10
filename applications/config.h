@@ -22,6 +22,7 @@
 #define MODBUS_UNIT_ID          0x01            /* 从站地址 (固定) */
 #define MODBUS_FC_WRITE_SINGLE  0x06            /* FC06 写单个寄存器 */
 #define MODBUS_FC_READ_HOLD     0x03            /* FC03 读保持寄存器 */
+#define MODBUS_FC_READ_INPUT    0x04            /* FC04 读输入寄存器 */
 #define MODBUS_PROTOCOL_ID      0x0000          /* 协议标识 (固定) */
 
 /* ========================================================================

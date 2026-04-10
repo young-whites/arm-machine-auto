@@ -373,3 +373,82 @@ int modbus_poll_until_equal(uint16_t reg_addr, uint16_t target_value,
         rt_thread_mdelay(poll_interval);
     }
 }
+
+/* ========================================================================
+ *  FC04 - 读输入寄存器
+ *  请求帧: 事务ID(2B) 00 00 00 06 01 04 起始地址(2B) 数量(2B)
+ *  响应帧: 事务ID(2B) 00 00 00 05 01 04 02 值高 值低 (读1个寄存器)
+ * ======================================================================== */
+int modbus_read_input_register(uint16_t reg_addr, uint16_t *p_value)
+{
+    uint8_t frame[FC03_FRAME_LEN]; /* FC04 请求帧长度与 FC03 相同 */
+    uint16_t tid = get_next_trans_id();
+    int ret;
+    static int timeout_error_printed = 0;
+
+    /* 组装 FC04 请求帧 */
+    frame[0]  = (uint8_t)(tid >> 8);            /* 事务ID 高字节 */
+    frame[1]  = (uint8_t)(tid & 0xFF);          /* 事务ID 低字节 */
+    frame[2]  = 0x00;                           /* 协议ID */
+    frame[3]  = 0x00;
+    frame[4]  = 0x00;                           /* 长度 */
+    frame[5]  = 0x06;
+    frame[6]  = MODBUS_UNIT_ID;                 /* 单元ID */
+    frame[7]  = MODBUS_FC_READ_INPUT;           /* 功能码 0x04 */
+    frame[8]  = (uint8_t)(reg_addr >> 8);       /* 起始地址 高字节 */
+    frame[9]  = (uint8_t)(reg_addr & 0xFF);     /* 起始地址 低字节 */
+    frame[10] = 0x00;                           /* 数量 高字节 */
+    frame[11] = 0x01;                           /* 数量 低字节 (读1个) */
+
+    /* 发送 */
+    ret = send_frame(frame, FC03_FRAME_LEN); /* 使用相同的帧长度 */
+    if (ret != 0) return -1;
+
+    /* 等待响应 (超时60s, 适配机械臂运动耗时) */
+    uint16_t recv_len = 0;
+    ret = receive_response(s_rx_buf, sizeof(s_rx_buf), &recv_len, 60000);
+
+    if (ret != 0) {
+        if (!timeout_error_printed) {
+            ERROR_PRINT("FC04 TID=%04X: no response (timeout)\n", tid);
+            timeout_error_printed = 1;
+        }
+        return -2;
+    }
+
+    /* 调试: 打印原始帧 */
+    if (g_debug_verbose) {
+        DEBUG_PRINT("FC04 TID=%04X: RX %d bytes: ", tid, recv_len);
+        for (int i = 0; i < recv_len; i++) {
+            DEBUG_PRINT("%02X ", s_rx_buf[i]);
+        }
+        DEBUG_PRINT("\n");
+    }
+
+    /* 解析响应: 至少需要 MBAP(7) + FC(1) + ByteCount(1) = 9 字节 */
+    if (recv_len >= 9 && s_rx_buf[7] == MODBUS_FC_READ_INPUT) {
+        uint8_t byte_count = s_rx_buf[8];
+        /* 检查字节数是否合理，且接收长度足够 */
+        if (byte_count >= 2 && recv_len >= 9 + byte_count) {
+            *p_value = ((uint16_t)s_rx_buf[9] << 8) | s_rx_buf[10];
+            timeout_error_printed = 0; /* 重置超时错误打印标志 */
+
+            if (g_debug_verbose) {
+                DEBUG_PRINT("FC04 TID=%04X: reg[%d] = %d\n", tid, reg_addr, *p_value);
+            }
+            return 0;
+        }
+    }
+
+    /* 检查异常响应 */
+    if (recv_len >= 9 && (s_rx_buf[7] & 0x80)) {
+        ERROR_PRINT("FC04 TID=%04X: exception code %d\n", tid, s_rx_buf[8]);
+        flush_rx_buffer();
+        return -2;
+    }
+
+    /* 响应格式异常，不清空缓冲区，仅打印调试信息，让上层重试 */
+    DEBUG_PRINT("FC04 TID=%04X: unexpected response len=%d (expected >=9)\n", tid, recv_len);
+    /* 不调用 flush_rx_buffer()，保留数据供下次读取 */
+    return -2;
+}
