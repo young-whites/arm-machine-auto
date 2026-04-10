@@ -320,11 +320,12 @@ int modbus_poll_until_equal(uint16_t reg_addr, uint16_t target_value,
     rt_tick_t timeout_tick = rt_tick_from_millisecond(timeout_ms);
     uint16_t read_value;
     int ret;
+    int error_count = 0;
 
     while (1) {
         /* 检查超时 */
         if ((rt_tick_get() - start_tick) > timeout_tick) {
-            ERROR_PRINT("poll: timeout waiting reg[%d]==%d\n", reg_addr, target_value);
+            ERROR_PRINT("poll: timeout waiting reg[%d]==%d (errors=%d)\n", reg_addr, target_value, error_count);
             return -1;
         }
 
@@ -337,18 +338,22 @@ int modbus_poll_until_equal(uint16_t reg_addr, uint16_t target_value,
         /* 读取寄存器 */
         ret = modbus_read_holding_register(reg_addr, &read_value);
         if (ret == 0 && read_value == target_value) {
-            DEBUG_PRINT("poll: reg[%d] == %d (matched)\n", reg_addr, target_value);
+            DEBUG_PRINT("poll: reg[%d] == %d (matched, errors=%d)\n", reg_addr, target_value, error_count);
             return 0;
         }
         if (ret == 0) {
             /* 读取成功但值不匹配，打印当前值 */
             INFO_PRINT("poll: reg[%d] = %d (target=%d)\n", reg_addr, read_value, target_value);
+            error_count = 0; /* 重置错误计数 */
         } else {
             /* 通信失败 */
-            INFO_PRINT("poll: read reg[%d] failed (ret=%d)\n", reg_addr, ret);
+            error_count++;
+            if (error_count <= 3 || (error_count % 10 == 0)) {
+                INFO_PRINT("poll: read reg[%d] failed (ret=%d, errors=%d)\n", reg_addr, ret, error_count);
+            }
         }
 
-        /* 轮询间隔 (统一一次延迟, 修复双重延迟 bug) */
+        /* 轮询间隔 */
         rt_thread_mdelay(poll_interval);
     }
 }
