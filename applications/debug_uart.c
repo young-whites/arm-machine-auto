@@ -172,6 +172,7 @@ static void cmd_help(int argc, char **argv)
     INFO_PRINT("  cmd_skip_med on/off  - Skip dispense stage\n");
     INFO_PRINT("  cmd_skip_shake on/off - Skip shake stage\n");
     INFO_PRINT("  cmd_write_ai1 N  - Write AI1 register (test)\n");
+    INFO_PRINT("  cmd_read_ao1     - Read AO1 register (test)\n");
     INFO_PRINT("  cmd_status       - Show system status\n");
 }
 MSH_CMD_EXPORT(cmd_help, Show available commands);
@@ -250,6 +251,19 @@ static void cmd_write_ai1(int argc, char **argv)
     }
 }
 MSH_CMD_EXPORT(cmd_write_ai1, Write AI1 register);
+
+/* read_ao1 - 读取 AO1 状态值 */
+static void cmd_read_ao1(int argc, char **argv)
+{
+    uint16_t value;
+    int ret = modbus_read_holding_register(AO_ADDR_STEP, &value);
+    if (ret == 0) {
+        INFO_PRINT("AO1 (reg 101) = %d\n", value);
+    } else {
+        ERROR_PRINT("Failed to read AO1 (ret=%d)\n", ret);
+    }
+}
+MSH_CMD_EXPORT(cmd_read_ao1, Read AO1 register);
 
 /* status - 显示系统状态 */
 static void cmd_status(int argc, char **argv)
