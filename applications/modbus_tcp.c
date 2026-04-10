@@ -340,6 +340,13 @@ int modbus_poll_until_equal(uint16_t reg_addr, uint16_t target_value,
             DEBUG_PRINT("poll: reg[%d] == %d (matched)\n", reg_addr, target_value);
             return 0;
         }
+        if (ret == 0) {
+            /* 读取成功但值不匹配，打印当前值 */
+            INFO_PRINT("poll: reg[%d] = %d (target=%d)\n", reg_addr, read_value, target_value);
+        } else {
+            /* 通信失败 */
+            INFO_PRINT("poll: read reg[%d] failed (ret=%d)\n", reg_addr, ret);
+        }
 
         /* 轮询间隔 (统一一次延迟, 修复双重延迟 bug) */
         rt_thread_mdelay(poll_interval);
