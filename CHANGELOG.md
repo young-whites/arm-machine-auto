@@ -2,6 +2,14 @@
 
 ## 2026-04-10
 
+### 18:22 — 调整日志级别，减少通信错误刷屏
+- **文件**: `modbus_tcp.c`
+- **内容**: 
+  - 将 "unexpected response len" 错误改为 DEBUG_PRINT
+  - 将轮询通信失败日志改为 DEBUG_PRINT
+  - 将读取值不匹配日志改为 DEBUG_PRINT
+  - 保留阶段步骤、超时、成功读取AO寄存器等关键INFO_PRINT
+
 ### 18:10 — 调整轮询间隔为 50ms
 - **文件**: `config.h`
 - **内容**: 

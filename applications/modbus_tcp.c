@@ -288,8 +288,8 @@ int modbus_read_holding_register(uint16_t reg_addr, uint16_t *p_value)
         return -2;
     }
 
-    /* 响应格式异常，不清空缓冲区，仅打印错误，让上层重试 */
-    ERROR_PRINT("FC03 TID=%04X: unexpected response len=%d (expected >=9)\n", tid, recv_len);
+    /* 响应格式异常，不清空缓冲区，仅打印调试信息，让上层重试 */
+    DEBUG_PRINT("FC03 TID=%04X: unexpected response len=%d (expected >=9)\n", tid, recv_len);
     /* 不调用 flush_rx_buffer()，保留数据供下次读取 */
     return -2;
 }
@@ -354,13 +354,13 @@ int modbus_poll_until_equal(uint16_t reg_addr, uint16_t target_value,
         }
         if (ret == 0) {
             /* 读取成功但值不匹配，打印当前值 */
-            INFO_PRINT("poll: reg[%d] = %d (target=%d)\n", reg_addr, read_value, target_value);
+            DEBUG_PRINT("poll: reg[%d] = %d (target=%d)\n", reg_addr, read_value, target_value);
             error_count = 0; /* 重置错误计数 */
         } else {
             /* 通信失败 */
             error_count++;
             if (error_count <= 3 || (error_count % 10 == 0)) {
-                INFO_PRINT("poll: read reg[%d] failed (ret=%d, errors=%d)\n", reg_addr, ret, error_count);
+                DEBUG_PRINT("poll: read reg[%d] failed (ret=%d, errors=%d)\n", reg_addr, ret, error_count);
             }
         }
 
