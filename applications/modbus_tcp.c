@@ -258,10 +258,20 @@ int modbus_read_holding_register(uint16_t reg_addr, uint16_t *p_value)
         return -2;
     }
 
-    /* 解析响应: 期望至少 11 字节 (MBAP 7B + FC 1B + ByteCount 1B + Data 2B) */
-    if (recv_len >= 11 && s_rx_buf[7] == MODBUS_FC_READ_HOLD) {
+    /* 调试: 打印原始帧 */
+    if (g_debug_verbose) {
+        DEBUG_PRINT("FC03 TID=%04X: RX %d bytes: ", tid, recv_len);
+        for (int i = 0; i < recv_len; i++) {
+            DEBUG_PRINT("%02X ", s_rx_buf[i]);
+        }
+        DEBUG_PRINT("\n");
+    }
+
+    /* 解析响应: 至少需要 MBAP(7) + FC(1) + ByteCount(1) = 9 字节 */
+    if (recv_len >= 9 && s_rx_buf[7] == MODBUS_FC_READ_HOLD) {
         uint8_t byte_count = s_rx_buf[8];
-        if (byte_count >= 2) {
+        /* 检查字节数是否合理，且接收长度足够 */
+        if (byte_count >= 2 && recv_len >= 9 + byte_count) {
             *p_value = ((uint16_t)s_rx_buf[9] << 8) | s_rx_buf[10];
 
             if (g_debug_verbose) {
@@ -278,8 +288,9 @@ int modbus_read_holding_register(uint16_t reg_addr, uint16_t *p_value)
         return -2;
     }
 
-    ERROR_PRINT("FC03 TID=%04X: unexpected response len=%d\n", tid, recv_len);
-    flush_rx_buffer();
+    /* 响应格式异常，不清空缓冲区，仅打印错误，让上层重试 */
+    ERROR_PRINT("FC03 TID=%04X: unexpected response len=%d (expected >=9)\n", tid, recv_len);
+    /* 不调用 flush_rx_buffer()，保留数据供下次读取 */
     return -2;
 }
 
