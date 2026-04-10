@@ -2,6 +2,13 @@
 
 ## 2026-04-10
 
+### 16:42 — 增大串口接收缓冲区
+- **文件**: `rtconfig.h`
+- **内容**: 
+  - `RT_SERIAL_RB_BUFSZ`: 64 → **256**
+  - 解决 MSH 终端警告："no enough buffer for saving data"
+  - 适配 Modbus 通信大量数据接收
+
 ### 16:24 — 新增 MSH 测试命令 cmd_write_ai1
 - **文件**: `debug_uart.c`
 - **内容**: 
