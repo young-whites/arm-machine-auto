@@ -171,6 +171,7 @@ static void cmd_help(int argc, char **argv)
     INFO_PRINT("  cmd_mode loop/single - Set mode\n");
     INFO_PRINT("  cmd_skip_med on/off  - Skip dispense stage\n");
     INFO_PRINT("  cmd_skip_shake on/off - Skip shake stage\n");
+    INFO_PRINT("  cmd_write_ai1 N  - Write AI1 register (test)\n");
     INFO_PRINT("  cmd_status       - Show system status\n");
 }
 MSH_CMD_EXPORT(cmd_help, Show available commands);
@@ -232,6 +233,23 @@ static void cmd_skip_shake(int argc, char **argv)
     }
 }
 MSH_CMD_EXPORT(cmd_skip_shake, Skip shake stage);
+
+/* write_ai1 N - 写 AI1 寄存器值 */
+static void cmd_write_ai1(int argc, char **argv)
+{
+    if (argc < 2) {
+        ERROR_PRINT("Usage: cmd_write_ai1 <value>\n");
+        return;
+    }
+    int val = atoi(argv[1]);
+    int ret = modbus_write_single_register(AI_ADDR_SIGNAL, (uint16_t)val);
+    if (ret == 0) {
+        INFO_PRINT("AI1 (reg 101) written to %d\n", val);
+    } else {
+        ERROR_PRINT("Failed to write AI1 (ret=%d)\n", ret);
+    }
+}
+MSH_CMD_EXPORT(cmd_write_ai1, Write AI1 register);
 
 /* status - 显示系统状态 */
 static void cmd_status(int argc, char **argv)
