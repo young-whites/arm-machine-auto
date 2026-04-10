@@ -230,6 +230,7 @@ int modbus_read_holding_register(uint16_t reg_addr, uint16_t *p_value)
     uint8_t frame[FC03_FRAME_LEN];
     uint16_t tid = get_next_trans_id();
     int ret;
+    static int timeout_error_printed = 0;
 
     /* 组装 FC03 请求帧 */
     frame[0]  = (uint8_t)(tid >> 8);            /* 事务ID 高字节 */
@@ -254,7 +255,10 @@ int modbus_read_holding_register(uint16_t reg_addr, uint16_t *p_value)
     ret = receive_response(s_rx_buf, sizeof(s_rx_buf), &recv_len, 60000);
 
     if (ret != 0) {
-        ERROR_PRINT("FC03 TID=%04X: no response (timeout)\n", tid);
+        if (!timeout_error_printed) {
+            ERROR_PRINT("FC03 TID=%04X: no response (timeout)\n", tid);
+            timeout_error_printed = 1;
+        }
         return -2;
     }
 
@@ -273,6 +277,7 @@ int modbus_read_holding_register(uint16_t reg_addr, uint16_t *p_value)
         /* 检查字节数是否合理，且接收长度足够 */
         if (byte_count >= 2 && recv_len >= 9 + byte_count) {
             *p_value = ((uint16_t)s_rx_buf[9] << 8) | s_rx_buf[10];
+            timeout_error_printed = 0; /* 重置超时错误打印标志 */
 
             if (g_debug_verbose) {
                 DEBUG_PRINT("FC03 TID=%04X: reg[%d] = %d\n", tid, reg_addr, *p_value);
