@@ -323,8 +323,8 @@ static int stage_dispense(void)
 /* ========================================================================
  *  阶段5: 拧紧瓶盖
  *  两次信号交换:
- *    机械臂写 AO1=1 → 上位机闭合夹爪并拧紧 → 写 AI1=1 → 清零
- *    机械臂写 AO1=1 → 上位机松开夹爪 → 写 AI1=1 → 清零
+ *    机械臂写 AO1=2 → 上位机闭合夹爪并拧紧 → 写 AI1=1 → 清零
+ *    机械臂写 AO1=2 → 上位机松开夹爪 → 写 AI1=1 → 清零
  * ======================================================================== */
 static int stage_tighten_cap(void)
 {
@@ -332,9 +332,9 @@ static int stage_tighten_cap(void)
 
     INFO_PRINT("=== Stage 5: TightenCap ===\n");
 
-    /* 第1次: 机械臂写 AO1=1 (到位) → 上位机闭合夹爪并拧紧 → ACK */
+    /* 第1次: 机械臂写 AO1=2 (到位) → 上位机闭合夹爪并拧紧 → ACK */
     if (g_stop_requested) return -1;
-    if (wait_robot_request_and_ack(1, "TightenCap-Close") != 0) return -1;
+    if (wait_robot_request_and_ack_fast(2, "TightenCap-Close") != 0) return -1;
     INFO_PRINT("TightenCap: closing gripper and tightening (simulated)\n");
     rt_thread_mdelay(500);
 
