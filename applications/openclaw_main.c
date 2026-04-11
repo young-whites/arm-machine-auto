@@ -406,6 +406,10 @@ static int run_single_cycle(void)
     ret = stage_loosen_cap();
     if (ret != 0) return ret;
 
+    /* 等待机械臂完成拧松并到达取药就绪位置 */
+    INFO_PRINT("Waiting for robot ready for dispense...\n");
+    rt_thread_mdelay(3000);  /* 延迟3秒 */
+
     /* 阶段4: 取药 (可跳过) */
     if (g_stop_requested) return -1;
     if (!g_skip_medicine) {
