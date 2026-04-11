@@ -218,40 +218,6 @@ static int stage_pick_bottle(void)
     }
 
     INFO_PRINT("PickBottle: bottle ID %d sent, robot executing...\n", g_bottle_id);
-
-    /* 等待机械臂开始执行取瓶动作，避免轮询过早导致脏数据 */
-    rt_thread_mdelay(3000);  /* 延迟3秒，让机械臂启动取瓶动作 */
-
-    /* 反瓶检测: 轮询 AO1，最多处理两次信号（夹紧+换位） */
-    {
-        int sub_step;
-        int ao_val;
-
-        for (sub_step = 0; sub_step < 2; sub_step++) {
-            ao_val = wait_robot_signal(STEP_TIMEOUT_MS, "PickBottle");
-            if (ao_val == -1) {
-                /* 超时 = 没有反瓶信号，正瓶流程直接继续 */
-                INFO_PRINT("PickBottle: no reverse-bottle signal (normal flow)\n");
-                break;
-            }
-            if (ao_val == -2) {
-                ERROR_PRINT("PickBottle: comm failure\n");
-                return -1;
-            }
-
-            INFO_PRINT("PickBottle: AO1=%d detected (sub-step %d)\n", ao_val, sub_step + 1);
-
-            /* TODO: 上位机执行夹紧/换位操作 */
-            rt_thread_mdelay(500);
-
-            /* 确认完成 */
-            ret = ack_robot("PickBottle");
-            if (ret != 0) return -1;
-
-            INFO_PRINT("PickBottle: sub-step %d completed\n", sub_step + 1);
-        }
-    }
-
     INFO_PRINT("PickBottle: completed\n");
     return 0;
 }
@@ -434,10 +400,6 @@ static int run_single_cycle(void)
     if (g_stop_requested) return -1;
     ret = stage_pick_bottle();
     if (ret != 0) return ret;
-
-    /* 等待机械臂完成取瓶并到达拧开瓶位置 */
-    INFO_PRINT("Waiting for robot to reach cap position...\n");
-    rt_thread_mdelay(5000);  /* 延迟5秒，让机械臂移动到拧开瓶位置 */
 
     /* 阶段3: 拧松瓶盖 */
     if (g_stop_requested) return -1;
