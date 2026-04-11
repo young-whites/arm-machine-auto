@@ -234,12 +234,12 @@ static int stage_pick_bottle(void)
 
 /* ========================================================================
  *  阶段3: 拧松瓶盖
- *  机械臂写 AO1=2（拧松请求）→ 上位机轮询检测 → 执行拧松 → 写 AI1=1 → 清零
+ *  机械臂写 AO1=1（到位信号）→ 上位机轮询检测 → 执行拧松 → 写 AI1=1 → 清零
  * ======================================================================== */
 static int stage_loosen_cap(void)
 {
     INFO_PRINT("=== Stage 3: LoosenCap ===\n");
-    return wait_robot_request_and_ack(2, "LoosenCap");
+    return wait_robot_request_and_ack(1, "LoosenCap");
 }
 
 /* ========================================================================
