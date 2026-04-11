@@ -434,6 +434,9 @@ static int run_single_cycle(void)
     ret = stage_loosen_cap();
     if (ret != 0) return ret;
 
+    /* 等待机械臂清除AO1并继续执行 */
+    rt_thread_mdelay(2000);  /* 2秒，让机械臂清除AO1并移动 */
+
     /* 阶段4: 取药 (可跳过) */
     if (g_stop_requested) return -1;
     if (!g_skip_medicine) {
