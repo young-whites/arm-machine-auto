@@ -435,6 +435,10 @@ static int run_single_cycle(void)
     ret = stage_pick_bottle();
     if (ret != 0) return ret;
 
+    /* 等待机械臂完成取瓶并到达拧开瓶位置 */
+    INFO_PRINT("Waiting for robot to reach cap position...\n");
+    rt_thread_mdelay(5000);  /* 延迟5秒，让机械臂移动到拧开瓶位置 */
+
     /* 阶段3: 拧松瓶盖 */
     if (g_stop_requested) return -1;
     ret = stage_loosen_cap();
