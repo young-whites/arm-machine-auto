@@ -81,6 +81,34 @@ static int wait_robot_signal(uint32_t timeout_ms, const char *desc)
     }
 }
 
+/* 快速轮询版本 - 用于500ms短窗口信号检测 */
+static int wait_robot_signal_fast(uint32_t timeout_ms, const char *desc)
+{
+    rt_tick_t start_tick = rt_tick_get();
+    rt_tick_t timeout_tick = rt_tick_from_millisecond(timeout_ms);
+    uint16_t val;
+    int ret;
+
+    while (1) {
+        if ((rt_tick_get() - start_tick) > timeout_tick) {
+            ERROR_PRINT("[%s] poll timeout (%dms)\n", desc, (int)timeout_ms);
+            return -1;
+        }
+        if (g_stop_requested) return -1;
+
+        ret = modbus_read_input_register(AO_ADDR_STEP, &val);
+        if (ret == 0 && val > 0) {
+            DEBUG_PRINT("[%s] AO1=%d detected\n", desc, val);
+            return (int)val;
+        }
+        if (ret == -1) {
+            ERROR_PRINT("[%s] FC04 send failed\n", desc);
+            return -2;
+        }
+        rt_thread_mdelay(10);  /* 10ms快速轮询 */
+    }
+}
+
 /* ------------------------------------------------------------ */
 /* 业务帮助函数：写寄存器后轮询目标 AO/线圈直至等于期望值 */
 int write_then_poll(uint16_t write_addr, uint16_t write_val,
@@ -247,8 +275,8 @@ static int stage_dispense(void)
     INFO_PRINT("=== Stage 4: Dispense (count=%d, port=%d) ===\n",
                g_dispense_count, g_dispense_port);
 
-    /* 等待机械臂就绪 */
-    ao_val = wait_robot_signal(STEP_TIMEOUT_MS, "Dispense-Ready");
+    /* 等待机械臂就绪 (快速轮询) */
+    ao_val = wait_robot_signal_fast(STEP_TIMEOUT_MS, "Dispense-Ready");
     if (ao_val < 0) return -1;
 
     INFO_PRINT("Dispense: robot ready, sending parameters\n");
@@ -405,10 +433,6 @@ static int run_single_cycle(void)
     if (g_stop_requested) return -1;
     ret = stage_loosen_cap();
     if (ret != 0) return ret;
-
-    /* 等待机械臂完成拧松并到达取药就绪位置 */
-    INFO_PRINT("Waiting for robot ready for dispense...\n");
-    rt_thread_mdelay(3000);  /* 延迟3秒 */
 
     /* 阶段4: 取药 (可跳过) */
     if (g_stop_requested) return -1;
