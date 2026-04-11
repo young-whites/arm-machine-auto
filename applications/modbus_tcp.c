@@ -351,8 +351,8 @@ int modbus_poll_until_equal(uint16_t reg_addr, uint16_t target_value,
             return -1;
         }
 
-        /* 读取寄存器 */
-        ret = modbus_read_holding_register(reg_addr, &read_value);
+        /* 读取寄存器 (使用 FC04) */
+        ret = modbus_read_input_register(reg_addr, &read_value);
         if (ret == 0 && read_value == target_value) {
             DEBUG_PRINT("poll: reg[%d] == %d (matched, errors=%d)\n", reg_addr, target_value, error_count);
             return 0;

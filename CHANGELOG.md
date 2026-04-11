@@ -2,6 +2,14 @@
 
 ## 2026-04-11
 
+### 16:30 — 正式业务代码 AO 寄存器读取统一使用 FC04
+- **文件**: `openclaw_main.c`, `modbus_tcp.c`
+- **内容**: 
+  - 修改 `wait_robot_signal()` 函数，使用 `modbus_read_input_register` (FC04) 读取 AO1
+  - 修改 `modbus_poll_until_equal()` 函数，使用 `modbus_read_input_register` (FC04)
+  - 统一所有 AO 寄存器读取都使用 FC04
+  - 更新错误日志，FC03 → FC04
+
 ### 16:19 — 规范 AO 寄存器读取使用 FC04
 - **文件**: `debug_uart.c`
 - **内容**: 

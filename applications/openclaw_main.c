@@ -68,13 +68,13 @@ static int wait_robot_signal(uint32_t timeout_ms, const char *desc)
         }
         if (g_stop_requested) return -1;
 
-        ret = modbus_read_holding_register(AO_ADDR_STEP, &val);
+        ret = modbus_read_input_register(AO_ADDR_STEP, &val);
         if (ret == 0 && val > 0) {
             DEBUG_PRINT("[%s] AO1=%d detected\n", desc, val);
             return (int)val;
         }
         if (ret == -1) {
-            ERROR_PRINT("[%s] FC03 send failed\n", desc);
+            ERROR_PRINT("[%s] FC04 send failed\n", desc);
             return -2;
         }
         rt_thread_mdelay(MODBUS_POLL_INTERVAL_MS);
