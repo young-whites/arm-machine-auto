@@ -114,6 +114,27 @@ int wait_robot_request_and_ack(uint16_t expected_ao, const char *stage)
     }
     return 0;
 }
+
+/* ------------------------------------------------------------ */
+/* 快速轮询版本 - 用于500ms短窗口信号检测 */
+static int wait_robot_request_and_ack_fast(uint16_t expected_ao, const char *stage)
+{
+    int ret = modbus_poll_until_equal(AO_ADDR_STEP, expected_ao,
+                                      STEP_TIMEOUT_MS,
+                                      10);  /* 10ms快速轮询 */
+    if (ret != 0) {
+        ERROR_PRINT("%s: robot did not send expected request AO=%d\n", stage, expected_ao);
+        return -1;
+    }
+    INFO_PRINT("%s: robot request AO=%d detected\n", stage, expected_ao);
+    /* 发送 ACK (AI1=1) 并清零 */
+    ret = modbus_write_and_clear(AI_ADDR_SIGNAL, 1);
+    if (ret != 0) {
+        ERROR_PRINT("%s: failed to ACK robot\n", stage);
+        return -1;
+    }
+    return 0;
+}
 /* ========================================================================
  *  辅助: 发送 AI 信号并清零
  *  上位机完成操作后，写 AI1=1 通知机械臂，短延迟后清零
@@ -237,12 +258,12 @@ static int stage_pick_bottle(void)
 
 /* ========================================================================
  *  阶段3: 拧松瓶盖
- *  机械臂写 AO1=1（到位信号）→ 上位机轮询检测 → 执行拧松 → 写 AI1=1 → 清零
+ *  机械臂写 AO1=2（到位信号，500ms内清除）→ 上位机轮询检测 → 执行拧松 → 写 AI1=1 → 清零
  * ======================================================================== */
 static int stage_loosen_cap(void)
 {
     INFO_PRINT("=== Stage 3: LoosenCap ===\n");
-    return wait_robot_request_and_ack(1, "LoosenCap");
+    return wait_robot_request_and_ack_fast(2, "LoosenCap");  /* 使用10ms快速轮询 */
 }
 
 /* ========================================================================
