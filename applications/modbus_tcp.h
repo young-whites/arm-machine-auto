@@ -48,6 +48,18 @@ int modbus_write_single_register(uint16_t reg_addr, uint16_t value);
 int modbus_read_holding_register(uint16_t reg_addr, uint16_t *p_value);
 
 /* ========================================================================
+ *  FC04 - 读输入寄存器 (读 AI)
+ * ======================================================================== */
+
+/**
+ * @brief  使用 FC04 读单个输入寄存器
+ * @param  reg_addr  寄存器地址 (如 AI_ADDR_SIGNAL=101)
+ * @param  p_value   输出: 读取到的寄存器值
+ * @return 0=成功, -1=发送失败, -2=响应异常/超时
+ */
+int modbus_read_input_register(uint16_t reg_addr, uint16_t *p_value);
+
+/* ========================================================================
  *  高级封装
  * ======================================================================== */
 
