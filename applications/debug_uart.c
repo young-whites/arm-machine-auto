@@ -253,11 +253,11 @@ static void cmd_write_ai1(int argc, char **argv)
 }
 MSH_CMD_EXPORT(cmd_write_ai1, Write AI1 register);
 
-/* read_ao1 - 读取 AO1 状态值 */
+/* read_ao1 - 读取 AO1 状态值 (使用 FC04) */
 static void cmd_read_ao1(int argc, char **argv)
 {
     uint16_t value;
-    int ret = modbus_read_holding_register(AO_ADDR_STEP, &value);
+    int ret = modbus_read_input_register(AO_ADDR_STEP, &value);
     if (ret == 0) {
         INFO_PRINT("AO1 (reg 101) = %d\n", value);
     } else {
