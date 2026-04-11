@@ -198,6 +198,9 @@ static int stage_pick_bottle(void)
 
     INFO_PRINT("PickBottle: bottle ID %d sent, robot executing...\n", g_bottle_id);
 
+    /* 等待机械臂开始执行取瓶动作，避免轮询过早导致脏数据 */
+    rt_thread_mdelay(3000);  /* 延迟3秒，让机械臂启动取瓶动作 */
+
     /* 反瓶检测: 轮询 AO1，最多处理两次信号（夹紧+换位） */
     {
         int sub_step;
